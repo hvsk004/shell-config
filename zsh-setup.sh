@@ -1,7 +1,20 @@
 #!/bin/bash
 set -e
 
-# --- 0. Backup existing .zshrc ---
+# --- 0. Check for root user ---
+if [[ $EUID -eq 0 ]] && [[ "$1" != "--root" ]]; then
+  echo "⚠️  WARNING: You are running this script as root!"
+  echo "This will configure zsh for the root user, which is usually not intended."
+  echo ""
+  echo "If you meant to run this for a regular user, exit and run:"
+  echo "  ./zsh-setup.sh"
+  echo ""
+  echo "If you really want to configure zsh for root, run:"
+  echo "  ./zsh-setup.sh --root"
+  exit 1
+fi
+
+# --- 1. Backup existing .zshrc ---
 if [ -f ~/.zshrc ]; then
   echo "Backing up existing .zshrc to .zshrc.bak..."
   cp ~/.zshrc ~/.zshrc.bak
@@ -104,4 +117,4 @@ if [ "$SHELL" != "$(which zsh)" ]; then
 fi
 
 
-echo "✔ Setup complete. Logout and SSH back in."
+echo "✔ Setup complete. Logout and SSH back in."c

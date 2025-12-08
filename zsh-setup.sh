@@ -100,7 +100,8 @@ fi
 # --- 4. Switch Shell ---
 if [ "$SHELL" != "$(which zsh)" ]; then
   echo "Switching default shell to Zsh..."
-  chsh -s "$(which zsh)"
+  sudo chsh -s "$(which zsh)" "$USER"
 fi
+
 
 echo "✔ Setup complete. Logout and SSH back in."

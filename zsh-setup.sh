@@ -86,7 +86,22 @@ fi
 
 # --- ALIASES ---
 # 1. The Super-User Zsh alias (Run zsh as root, but use MY config)
-alias suzsh="sudo ZDOTDIR=$HOME zsh"
+# Prevent alias/function conflicts
+unalias suzsh 2>/dev/null
+suzsh() {
+    # 1. Check if we are using Ghostty
+    if [[ "$TERM" == "xterm-ghostty" ]]; then
+        # 2. Check if Root has the terminfo. 
+        # If 'sudo infocmp' fails, install it.
+        if ! sudo infocmp "$TERM" > /dev/null 2>&1; then
+            echo "👻 First time setup: Installing Ghostty terminfo for root..."
+            infocmp "$TERM" | sudo tic -x -
+        fi
+    fi
+
+    # 3. Run the command
+    sudo ZDOTDIR=$HOME zsh
+}
 
 # 2. Python defaults
 alias python="python3"
@@ -117,4 +132,4 @@ if [ "$SHELL" != "$(which zsh)" ]; then
 fi
 
 
-echo "✔ Setup complete. Logout and SSH back in."c
+echo "✔ Setup complete. Logout and SSH back in."

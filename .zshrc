@@ -48,6 +48,11 @@ alias grep="grep --color=auto"
 
 # 4. Safety (interactive mode prevents accidental deletions)
 alias cp="cp -i"
+
+# 5. Ubuntu Bat (batcat) fix
+if command -v batcat > /dev/null; then
+  alias bat="batcat"
+fi
 alias mv="mv -i"
 alias rm="rm -i"
 

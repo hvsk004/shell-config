@@ -22,7 +22,7 @@ echo "🚀 Starting Zsh setup..."
 # --- 1. Install System Packages ---
 # Note: We do NOT install fzf or zoxide via apt because Ubuntu repos are often too old
 # to support features like "fzf --zsh" or recent zoxide flags.
-PACKAGES="zsh git curl"
+PACKAGES="zsh git curl tmux bat"
 
 install_packages() {
   if command -v apt >/dev/null 2>&1; then
@@ -37,9 +37,26 @@ install_packages() {
   fi
 }
 
-# Install if zsh, git, or curl is missing
-if ! command -v zsh >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
-  echo "📦 Installing required system packages..."
+# Helper to check if a command exists (handling bat/batcat mapping)
+is_missing() {
+  if [[ "$1" == "bat" ]]; then
+    ! command -v bat >/dev/null 2>&1 && ! command -v batcat >/dev/null 2>&1
+  else
+    ! command -v "$1" >/dev/null 2>&1
+  fi
+}
+
+# Check if any package is missing
+MISSING_PACKAGES=""
+for pkg in $PACKAGES; do
+  if is_missing "$pkg"; then
+    MISSING_PACKAGES="$MISSING_PACKAGES $pkg"
+  fi
+done
+
+if [ -n "$MISSING_PACKAGES" ]; then
+  echo "📦 Installing missing packages:$MISSING_PACKAGES..."
+  PACKAGES="$MISSING_PACKAGES"
   install_packages
 fi
 
@@ -106,6 +123,19 @@ if [ -f "$SCRIPT_DIR/.zshrc" ]; then
   echo "✅ Copied .zshrc"
 else
   echo "⚠️  Warning: .zshrc not found in $SCRIPT_DIR"
+fi
+
+# Tmux Config
+if [ -f ~/.tmux.conf ]; then
+  echo "📂 Backing up existing .tmux.conf to .tmux.conf.bak..."
+  cp ~/.tmux.conf ~/.tmux.conf.bak
+fi
+
+if [ -f "$SCRIPT_DIR/tmux.conf" ]; then
+  cp "$SCRIPT_DIR/tmux.conf" ~/.tmux.conf
+  echo "✅ Copied .tmux.conf"
+else
+  echo "⚠️  Warning: tmux.conf not found in $SCRIPT_DIR"
 fi
 
 # --- 6. Switch Shell ---

@@ -1,6 +1,12 @@
 # --- Plugins Root ---
 export ZSH_PLUGIN_ROOT="$HOME/.zsh"
 
+# --- PATH ---
+# Use Zsh's 'path' array to avoid duplicates and ensure precedence.
+# This prepends to PATH only if not already present.
+path=("$HOME/.local/bin" "$HOME/.fzf/bin" $path)
+export PATH
+
 # --- History Config ---
 # If root, use a temp history file to avoid locking the user's file
 if [[ $UID -eq 0 ]]; then

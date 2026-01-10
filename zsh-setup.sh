@@ -20,7 +20,9 @@ fi
 echo "🚀 Starting Zsh setup..."
 
 # --- 1. Install System Packages ---
-PACKAGES="zsh git curl fzf zoxide"
+# Note: We do NOT install fzf or zoxide via apt because Ubuntu repos are often too old
+# to support features like "fzf --zsh" or recent zoxide flags.
+PACKAGES="zsh git curl"
 
 install_packages() {
   if command -v apt >/dev/null 2>&1; then
@@ -35,13 +37,28 @@ install_packages() {
   fi
 }
 
-# Install if zsh, git, curl, fzf, or zoxide is missing
-if ! command -v zsh >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1 || ! command -v fzf >/dev/null 2>&1 || ! command -v zoxide >/dev/null 2>&1; then
+# Install if zsh, git, or curl is missing
+if ! command -v zsh >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
   echo "📦 Installing required system packages..."
   install_packages
 fi
 
-# --- 2. Install Starship Prompt ---
+# --- 2. Install Tools (Latest Versions) ---
+
+# Install FZF (Git method ensures latest version for --zsh support)
+if [ ! -d "$HOME/.fzf" ]; then
+  echo "🔍 Installing FZF (Latest)..."
+  git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"
+  "$HO4E/.fzf/install" --bin
+fi
+
+# Install Zoxide (Official script)
+if ! command -v zoxide >/dev/null 2>&1; then
+  echo "🚀 Installing Zoxide..."
+  curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
+fi
+
+# --- 3. Install Starship Prompt ---
 if ! command -v starship >/dev/null 2>&1; then
   echo "✨ Installing Starship prompt..."
   curl -sS https://starship.rs/install.sh | sh -s -- -y
@@ -61,7 +78,7 @@ if [ ! -d "$PLUGIN_DIR/zsh-syntax-highlighting" ]; then
   git clone https://github.com/zsh-users/zsh-syntax-highlighting "$PLUGIN_DIR/zsh-syntax-highlighting"
 fi
 
-# --- 4. Copy Configuration Files ---
+# --- 5. Copy Configuration Files ---
 echo "⚙️  Configuring files..."
 
 # Starship Config
@@ -91,7 +108,7 @@ else
   echo "⚠️  Warning: .zshrc not found in $SCRIPT_DIR"
 fi
 
-# --- 5. Switch Shell ---
+# --- 6. Switch Shell ---
 if [[ "$SHELL" != "$(which zsh)" ]]; then
   echo "🔄 Switching default shell to Zsh..."
   sudo chsh -s "$(which zsh)" "$USER"

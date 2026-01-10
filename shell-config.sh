@@ -66,7 +66,7 @@ fi
 if [ ! -d "$HOME/.fzf" ]; then
   echo "🔍 Installing FZF (Latest)..."
   git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"
-  "$HO4E/.fzf/install" --bin
+  "$HOME/.fzf/install" --bin
 fi
 
 # Install Zoxide (Official script)

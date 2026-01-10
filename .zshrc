@@ -114,6 +114,136 @@ dcdown() {
 
 alias dps="docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
 
+# --- Update Function ---
+# Updates all zsh tools and plugins
+update-zsh-tools() {
+    local QUIET=0
+    local UPDATE_ALL=1
+    local UPDATE_FZF=0
+    local UPDATE_PLUGINS=0
+    local UPDATE_ZOXIDE=0
+    local UPDATE_STARSHIP=0
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --quiet|-q)
+                QUIET=1
+                shift
+                ;;
+            fzf)
+                UPDATE_ALL=0
+                UPDATE_FZF=1
+                shift
+                ;;
+            plugins)
+                UPDATE_ALL=0
+                UPDATE_PLUGINS=1
+                shift
+                ;;
+            zoxide)
+                UPDATE_ALL=0
+                UPDATE_ZOXIDE=1
+                shift
+                ;;
+            starship)
+                UPDATE_ALL=0
+                UPDATE_STARSHIP=1
+                shift
+                ;;
+            *)
+                echo "Usage: update-zsh-tools [--quiet] [fzf|plugins|zoxide|starship]"
+                echo "  --quiet, -q : Suppress verbose output"
+                echo "  fzf         : Update only FZF"
+                echo "  plugins     : Update only zsh plugins"
+                echo "  zoxide      : Update only zoxide"
+                echo "  starship    : Update only starship"
+                echo "  (no args)   : Update everything"
+                return 1
+                ;;
+        esac
+    done
+    
+    # Helper function for output
+    log() {
+        if [[ $QUIET -eq 0 ]]; then
+            echo "$@"
+        fi
+    }
+    
+    log "🔄 Starting updates..."
+    
+    # Update FZF
+    if [[ $UPDATE_ALL -eq 1 ]] || [[ $UPDATE_FZF -eq 1 ]]; then
+        log ""
+        log "🔍 Updating FZF..."
+        if [[ -d "$HOME/.fzf" ]]; then
+            (cd "$HOME/.fzf" && git pull && log "✅ FZF updated")
+        else
+            log "⚠️  FZF not found at ~/.fzf"
+        fi
+    fi
+    
+    # Update Zsh Plugins
+    if [[ $UPDATE_ALL -eq 1 ]] || [[ $UPDATE_PLUGINS -eq 1 ]]; then
+        log ""
+        log "🔌 Updating Zsh plugins..."
+        
+        # Backup .zshrc before updating plugins
+        if [[ -f ~/.zshrc ]]; then
+            cp ~/.zshrc ~/.zshrc.bak.$(date +%Y%m%d_%H%M%S)
+            log "📂 Backed up .zshrc"
+        fi
+        
+        if [[ -d "$ZSH_PLUGIN_ROOT/zsh-autosuggestions" ]]; then
+            (cd "$ZSH_PLUGIN_ROOT/zsh-autosuggestions" && git pull && log "✅ zsh-autosuggestions updated")
+        else
+            log "⚠️  zsh-autosuggestions not found"
+        fi
+        
+        if [[ -d "$ZSH_PLUGIN_ROOT/zsh-syntax-highlighting" ]]; then
+            (cd "$ZSH_PLUGIN_ROOT/zsh-syntax-highlighting" && git pull && log "✅ zsh-syntax-highlighting updated")
+        else
+            log "⚠️  zsh-syntax-highlighting not found"
+        fi
+    fi
+    
+    # Update Zoxide
+    if [[ $UPDATE_ALL -eq 1 ]] || [[ $UPDATE_ZOXIDE -eq 1 ]]; then
+        log ""
+        log "🚀 Updating Zoxide..."
+        if command -v zoxide >/dev/null 2>&1; then
+            curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
+            log "✅ Zoxide updated"
+        else
+            log "⚠️  Zoxide not installed"
+        fi
+    fi
+    
+    # Update Starship
+    if [[ $UPDATE_ALL -eq 1 ]] || [[ $UPDATE_STARSHIP -eq 1 ]]; then
+        log ""
+        log "✨ Updating Starship..."
+        if command -v starship >/dev/null 2>&1; then
+            # Backup starship config before update
+            if [[ -f ~/.config/starship.toml ]]; then
+                cp ~/.config/starship.toml ~/.config/starship.toml.bak.$(date +%Y%m%d_%H%M%S)
+                log "📂 Backed up starship.toml"
+            fi
+            curl -sS https://starship.rs/install.sh | sh -s -- -y
+            log "✅ Starship updated"
+        else
+            log "⚠️  Starship not installed"
+        fi
+    fi
+    
+    log ""
+    log "✔️  Updates complete!"
+    if [[ $UPDATE_ALL -eq 1 ]] || [[ $UPDATE_PLUGINS -eq 1 ]]; then
+        log "💡 Restart your shell or run 'source ~/.zshrc' to reload plugins"
+    fi
+}
+
 
 # --- Load Plugins ---
 # Try to load plugins if they exist

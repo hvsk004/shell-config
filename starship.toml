@@ -1,0 +1,32 @@
+# Move the cursor to a new line after the prompt info
+format = """$username$hostname$directory$git_branch
+$character"""
+
+[username]
+show_always = true
+# "bold green" is usually the brightest green in most terminals
+style_user = "bold green" 
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bold green"
+format = "@[$hostname]($style) "
+
+[directory]
+style = "bold blue"
+format = "[$path]($style)[$read_only]($read_only_style) "
+
+[git_branch]
+symbol = " "
+# Keeps it clean without the "on" prefix
+format = "[$symbol$branch]($style) "
+
+[git_status]
+# Keeps it fast for your VM/SSH workflow
+disabled = true 
+
+[character]
+# The symbol that appears on the new line
+success_symbol = "[➜](bold green) "
+error_symbol = "[➜](bold red) "

@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # --- 0. Check for root user ---
 if [[ $EUID -eq 0 ]] && [[ "$1" != "--root" ]]; then
   echo "⚠️  WARNING: You are running this script as root!"
@@ -14,41 +17,10 @@ if [[ $EUID -eq 0 ]] && [[ "$1" != "--root" ]]; then
   exit 1
 fi
 
-# --- 0. Backup existing .zshrc ---
-if [ -f ~/.zshrc ]; then
-  echo "Backing up existing .zshrc to .zshrc.bak..."
-  cp ~/.zshrc ~/.zshrc.bak
-fi
+echo "🚀 Starting Zsh setup..."
 
-# --- 1. Install Zsh and Git ---url ---
+# --- 1. Install System Packages ---
 PACKAGES="zsh git curl"
-
-# --- 2. Install Starship Prompt ---
-if ! command -v starship >/dev/null 2>&1; then
-  echo "Installing Starship prompt..."
-  # The -s -- -y flag automates the installation without prompts
-  curl -sS https://starship.rs/install.sh | sh -s -- -y
-fi
-
-# --- 3. Configure .zshrc to initialize Starship ---
-if ! grep -q "starship init zsh" ~/.zshrc 2>/dev/null; then
-  echo 'eval "$(starship init zsh)"' >> ~/.zshrc
-fi
-
-# --- 4. (Optional) Create a basic config for VM performance ---
-mkdir -p ~/.config
-if [ ! -f ~/.config/starship.toml ]; then
-cat << 'TOML' > ~/.config/starship.toml
-# Disable git status for maximum speed on VMs, but keep the branch name
-[git_status]
-disabled = true
-
-[hostname]
-ssh_only = true
-format = "on [$hostname](bold red) "
-TOML
-fi
-
 
 install_packages() {
   if command -v apt >/dev/null 2>&1; then
@@ -63,100 +35,66 @@ install_packages() {
   fi
 }
 
-# Install if zsh or git is missing
-if ! command -v zsh >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
-  echo "Installing required packages..."
+# Install if zsh, git, or curl is missing
+if ! command -v zsh >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
+  echo "📦 Installing required system packages..."
   install_packages
 fi
 
-# --- 2. Install Plugins ---
-# We store plugins in the user's home directory
+# --- 2. Install Starship Prompt ---
+if ! command -v starship >/dev/null 2>&1; then
+  echo "✨ Installing Starship prompt..."
+  curl -sS https://starship.rs/install.sh | sh -s -- -y
+fi
+
+# --- 3. Install Zsh Plugins ---
 PLUGIN_DIR="$HOME/.zsh"
 mkdir -p "$PLUGIN_DIR"
 
 if [ ! -d "$PLUGIN_DIR/zsh-autosuggestions" ]; then
+  echo "📥 Cloning zsh-autosuggestions..."
   git clone https://github.com/zsh-users/zsh-autosuggestions "$PLUGIN_DIR/zsh-autosuggestions"
 fi
 
 if [ ! -d "$PLUGIN_DIR/zsh-syntax-highlighting" ]; then
+  echo "📥 Cloning zsh-syntax-highlighting..."
   git clone https://github.com/zsh-users/zsh-syntax-highlighting "$PLUGIN_DIR/zsh-syntax-highlighting"
 fi
 
-# --- 3. Configure .zshrc ---
-if ! grep -q "zsh-autosuggestions" ~/.zshrc 2>/dev/null; then
+# --- 4. Copy Configuration Files ---
+echo "⚙️  Configuring files..."
 
-# (A) Hardcode the plugin path so Root can find the User's plugins
-echo "export ZSH_PLUGIN_ROOT='$HOME/.zsh'" >> ~/.zshrc
+# Starship Config
+mkdir -p ~/.config
 
-# (B) Append the main configuration
-cat << 'RC' >> ~/.zshrc
-
-# --- History Config ---
-# If root, use a temp history file to avoid locking the user's file
-if [[ $UID -eq 0 ]]; then
-   HISTFILE="/root/.zsh_history_temp"
+if [ -f ~/.config/starship.toml ]; then
+  echo "📂 Backing up existing starship.toml to starship.toml.bak..."
+  cp ~/.config/starship.toml ~/.config/starship.toml.bak
+fi
+if [ -f "$SCRIPT_DIR/starship.toml" ]; then
+  cp "$SCRIPT_DIR/starship.toml" ~/.config/starship.toml
+  echo "✅ Copied starship.toml"
 else
-   HISTFILE="$HOME/.zsh_history"
+  echo "⚠️  Warning: starship.toml not found in $SCRIPT_DIR"
 fi
-HISTSIZE=10000
-SAVEHIST=10000
-setopt SHARE_HISTORY
 
-# --- Prompt ---
-autoload -U colors && colors
-# Red prompt for Root, Green for User
-if [[ $UID -eq 0 ]]; then
-  PROMPT="%{$fg[red]%}%n@%m%{$reset_color%} %{$fg[blue]%}%~%{$reset_color%} # "
+# Zshrc Config
+if [ -f ~/.zshrc ]; then
+  echo "📂 Backing up existing .zshrc to .zshrc.bak..."
+  cp ~/.zshrc ~/.zshrc.bak
+fi
+
+if [ -f "$SCRIPT_DIR/.zshrc" ]; then
+  cp "$SCRIPT_DIR/.zshrc" ~/.zshrc
+  echo "✅ Copied .zshrc"
 else
-  PROMPT="%{$fg[green]%}%n@%m%{$reset_color%} %{$fg[blue]%}%~%{$reset_color%} $ "
+  echo "⚠️  Warning: .zshrc not found in $SCRIPT_DIR"
 fi
 
-# --- ALIASES ---
-# 1. The Super-User Zsh alias (Run zsh as root, but use MY config)
-# Prevent alias/function conflicts
-unalias suzsh 2>/dev/null
-suzsh() {
-    # 1. Check if we are using Ghostty
-    if [[ "$TERM" == "xterm-ghostty" ]]; then
-        # 2. Check if Root has the terminfo. 
-        # If 'sudo infocmp' fails, install it.
-        if ! sudo infocmp "$TERM" > /dev/null 2>&1; then
-            echo "👻 First time setup: Installing Ghostty terminfo for root..."
-            infocmp "$TERM" | sudo tic -x -
-        fi
-    fi
-
-    # 3. Run the command
-    sudo ZDOTDIR=$HOME zsh
-}
-
-# 2. Python defaults
-alias python="python3"
-alias pip="pip3"
-
-# 3. Listing and File Ops
-alias ll="ls -lh"        # List long format, human readable sizes
-alias la="ls -lah"       # List all (including hidden)
-alias l="ls -CF"
-alias grep="grep --color=auto"
-
-# 4. Safety (interactive mode prevents accidental deletions)
-alias cp="cp -i"
-alias mv="mv -i"
-alias rm="rm -i"
-
-# --- Load Plugins ---
-source "$ZSH_PLUGIN_ROOT/zsh-autosuggestions/zsh-autosuggestions.zsh"
-source "$ZSH_PLUGIN_ROOT/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-
-RC
-fi
-
-# --- 4. Switch Shell ---
-if [ "$SHELL" != "$(which zsh)" ]; then
-  echo "Switching default shell to Zsh..."
+# --- 5. Switch Shell ---
+if [[ "$SHELL" != "$(which zsh)" ]]; then
+  echo "🔄 Switching default shell to Zsh..."
   sudo chsh -s "$(which zsh)" "$USER"
 fi
 
-
-echo "✔ Setup complete. Logout and SSH back in."
+echo "✔ Setup complete. Logout and SSH back in to see changes!"

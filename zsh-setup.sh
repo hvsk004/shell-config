@@ -14,7 +14,7 @@ if [[ $EUID -eq 0 ]] && [[ "$1" != "--root" ]]; then
   exit 1
 fi
 
-# --- 1. Backup existing .zshrc ---
+# --- 0. Backup existing .zshrc ---
 if [ -f ~/.zshrc ]; then
   echo "Backing up existing .zshrc to .zshrc.bak..."
   cp ~/.zshrc ~/.zshrc.bak
@@ -22,6 +22,33 @@ fi
 
 # --- 1. Install Zsh and Git ---url ---
 PACKAGES="zsh git curl"
+
+# --- 2. Install Starship Prompt ---
+if ! command -v starship >/dev/null 2>&1; then
+  echo "Installing Starship prompt..."
+  # The -s -- -y flag automates the installation without prompts
+  curl -sS https://starship.rs/install.sh | sh -s -- -y
+fi
+
+# --- 3. Configure .zshrc to initialize Starship ---
+if ! grep -q "starship init zsh" ~/.zshrc 2>/dev/null; then
+  echo 'eval "$(starship init zsh)"' >> ~/.zshrc
+fi
+
+# --- 4. (Optional) Create a basic config for VM performance ---
+mkdir -p ~/.config
+if [ ! -f ~/.config/starship.toml ]; then
+cat << 'TOML' > ~/.config/starship.toml
+# Disable git status for maximum speed on VMs, but keep the branch name
+[git_status]
+disabled = true
+
+[hostname]
+ssh_only = true
+format = "on [$hostname](bold red) "
+TOML
+fi
+
 
 install_packages() {
   if command -v apt >/dev/null 2>&1; then

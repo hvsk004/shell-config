@@ -20,7 +20,7 @@ fi
 echo "🚀 Starting Zsh setup..."
 
 # --- 1. Install System Packages ---
-PACKAGES="zsh git curl"
+PACKAGES="zsh git curl fzf zoxide"
 
 install_packages() {
   if command -v apt >/dev/null 2>&1; then
@@ -35,8 +35,8 @@ install_packages() {
   fi
 }
 
-# Install if zsh, git, or curl is missing
-if ! command -v zsh >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
+# Install if zsh, git, curl, fzf, or zoxide is missing
+if ! command -v zsh >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1 || ! command -v fzf >/dev/null 2>&1 || ! command -v zoxide >/dev/null 2>&1; then
   echo "📦 Installing required system packages..."
   install_packages
 fi

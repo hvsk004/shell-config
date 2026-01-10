@@ -45,6 +45,65 @@ alias cp="cp -i"
 alias mv="mv -i"
 alias rm="rm -i"
 
+# --- Custom Docker/Backend Aliases ---
+# dlogs: Tail logs for a specific container (fuzzy find if no arg)
+dlogs() {
+    local container=$1
+    local since_time="${2:-1m}"  # Default fallback to 1 minute
+
+    if [[ -z "$container" ]]; then
+        # Fetch names of all running containers
+        container=$(docker ps --format "{{.Names}}" | fzf --height 40% --layout=reverse --border --header "Select Container for Logs")
+    fi
+
+    # If a container was selected or provided, tail the logs
+    if [[ -n "$container" ]]; then
+        echo "Viewing logs for: $container (since $since_time)..."
+        docker logs -f "$container" --since "$since_time"
+    fi
+}
+
+# --- Docker Compose Helpers ---
+
+# 1. dcr: Restart a specific service (fuzzy find if no arg)
+dcr() {
+    local service=$1
+    if [[ -z "$service" ]]; then
+        # Fetch service names from docker-compose.yml
+        service=$(docker compose config --services | fzf --height 40% --layout=reverse --border --header "Select Service to Restart")
+    fi
+    
+    # If a service was selected or provided, restart it
+    if [[ -n "$service" ]]; then
+        docker compose restart "$service"
+    fi
+}
+
+# 2. dcup: Up a specific service or the whole stack
+dcup() {
+    local service=$1
+    if [[ -n "$service" ]]; then
+        docker compose up -d "$service"
+    else
+        echo "🚀 Starting entire stack..."
+        docker compose up -d
+    fi
+}
+
+# 3. dcdown: Down a specific service or the whole stack
+dcdown() {
+    local service=$1
+    if [[ -n "$service" ]]; then
+        docker compose stop "$service" && docker compose rm -f "$service"
+    else
+        echo "🛑 Stopping entire stack..."
+        docker compose down
+    fi
+}
+
+alias dps="docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+
+
 # --- Load Plugins ---
 # Try to load plugins if they exist
 if [ -f "$ZSH_PLUGIN_ROOT/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
@@ -53,6 +112,17 @@ fi
 
 if [ -f "$ZSH_PLUGIN_ROOT/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
     source "$ZSH_PLUGIN_ROOT/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+
+# --- FZF ---
+if command -v fzf >/dev/null 2>&1; then
+  # Completion and keybindings (if using newer fzf)
+  source <(fzf --zsh)
+fi
+
+# --- Zoxide (Better cd) ---
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init zsh)"
 fi
 
 # --- Starship Initialization ---

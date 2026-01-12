@@ -1,5 +1,6 @@
 # --- Plugins Root ---
-export ZSH_PLUGIN_ROOT="$HOME/.zsh"
+# If ZDOTDIR is set (e.g. in suzsh), look for plugins there first
+export ZSH_PLUGIN_ROOT="${ZDOTDIR:-$HOME}/.zsh"
 
 # --- PATH ---
 # Use Zsh's 'path' array to avoid duplicates and ensure precedence.

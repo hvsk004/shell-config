@@ -32,8 +32,9 @@ suzsh() {
         fi
     fi
 
-    # 3. Run the command
-    sudo ZDOTDIR=$HOME zsh
+    # 3. Run the command with user's tools in PATH
+    # Prepend user's paths to root's PATH so both system and user tools are available
+    sudo ZDOTDIR=$HOME PATH="$HOME/.local/bin:$HOME/.fzf/bin:$PATH" zsh
 }
 
 # 2. Python defaults

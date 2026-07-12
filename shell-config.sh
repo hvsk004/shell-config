@@ -4,6 +4,15 @@ set -e
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# User-local tools such as zoxide and Starship install here. Make the directory
+# available before any command checks so existing installs are detected.
+LOCAL_BIN="$HOME/.local/bin"
+mkdir -p "$LOCAL_BIN"
+case ":$PATH:" in
+  *":$LOCAL_BIN:"*) ;;
+  *) export PATH="$LOCAL_BIN:$PATH" ;;
+esac
+
 # --- 0. Check for root user ---
 if [[ $EUID -eq 0 ]] && [[ "$1" != "--root" ]]; then
   echo "⚠️  WARNING: You are running this script as root!"
@@ -78,7 +87,7 @@ fi
 # --- 3. Install Starship Prompt ---
 if ! command -v starship >/dev/null 2>&1; then
   echo "✨ Installing Starship prompt..."
-  curl -sS https://starship.rs/install.sh | sh -s -- -y
+  curl -sS https://starship.rs/install.sh | sh -s -- -y -b "$LOCAL_BIN"
 fi
 
 # --- 3. Install Zsh Plugins ---

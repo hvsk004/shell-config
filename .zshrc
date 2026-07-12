@@ -5,6 +5,7 @@ export ZSH_PLUGIN_ROOT="${ZDOTDIR:-$HOME}/.zsh"
 # --- PATH ---
 # Use Zsh's 'path' array to avoid duplicates and ensure precedence.
 # This prepends to PATH only if not already present.
+typeset -U path PATH
 path=("$HOME/.local/bin" "$HOME/.fzf/bin" $path)
 export PATH
 
@@ -294,7 +295,8 @@ update-zsh-tools() {
                 cp ~/.config/starship.toml ~/.config/starship.toml.bak.$(date +%Y%m%d_%H%M%S)
                 log "📂 Backed up starship.toml"
             fi
-            curl -sS https://starship.rs/install.sh | sh -s -- -y
+            mkdir -p "$HOME/.local/bin"
+            curl -sS https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin"
             log "✅ Starship updated"
         else
             log "⚠️  Starship not installed"

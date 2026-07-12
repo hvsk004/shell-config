@@ -154,3 +154,4 @@ if [[ "$SHELL" != "$(which zsh)" ]]; then
 fi
 
 echo "✔ Setup complete. Logout and SSH back in to see changes!"
+

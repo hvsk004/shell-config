@@ -22,7 +22,7 @@ echo "🚀 Starting Zsh setup..."
 # --- 1. Install System Packages ---
 # Note: We do NOT install fzf or zoxide via apt because Ubuntu repos are often too old
 # to support features like "fzf --zsh" or recent zoxide flags.
-PACKAGES="zsh git curl tmux bat"
+PACKAGES="zsh git curl tmux bat btop"
 
 install_packages() {
   if command -v apt >/dev/null 2>&1; then
